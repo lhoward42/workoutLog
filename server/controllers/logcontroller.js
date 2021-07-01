@@ -8,7 +8,7 @@ let's user create workout log
 ================================
 */
 router.post("/", validateJWT, async (req, res) => {
-    const { exercise, duration, caloriesBurned } = req.body.log
+    const { exercise, duration, caloriesBurned } = req.body
     const { id } = req.user
     const logEntry = {
         exercise,
@@ -16,13 +16,12 @@ router.post("/", validateJWT, async (req, res) => {
         caloriesBurned,
         owner: id
     }
-    try{
+    try {
         const newLog = await LogModel.create(logEntry)
         res.status(200).json(newLog)
     } catch (err) {
         res.status(500).json({ error: err })
     }
-    LogModel.create(logEntry)
 })
 
 /*
@@ -30,14 +29,23 @@ router.post("/", validateJWT, async (req, res) => {
 gets all logs for indiv. users
 =================================
 */
-router.get("/", async (req, res) => {
+router.get("/", validateJWT, async (req, res) => {
+    const query = {
+        where: {
+            owner: req.user.id
+        }
+    }
     try{
-        const entries = await LogModel.findAll()
+        const entries = await LogModel.findAll(query)
         res.status(200).json(entries)
     } catch (err) {
         res.status(500).json({ error: err })
     }
 })
+
+
+
+
 
 /*
 ================================
@@ -46,7 +54,7 @@ gets individual logs by id
 */
 router.get("/:id", validateJWT, async (req, res) => {
     const { id } = req.params
-    try{
+    try {
         const userLogs = await LogModel.findAll({
             where: {
                 id: id
@@ -64,7 +72,7 @@ indiv logs to be updated by a user
 ===================================
 */
 router.put("/:id", validateJWT, async (req, res) => {
-    const { exercise, duration, caloriesBurned } = req.body.log
+    const { exercise, duration, caloriesBurned } = req.body
     const logId = req.params.id
     const userId = req.user.id
 
@@ -105,10 +113,10 @@ router.delete("/:id", validateJWT, async (req, res) => {
             }
         }
 
-    await LogModel.destroy(query)
-    res.status(200).json({message: "Log Entry Removed"})
-} catch (err) {
-    res.status(500).json({ error: err })
-}
+        await LogModel.destroy(query)
+        res.status(200).json({ message: "Log Entry Removed" })
+    } catch (err) {
+        res.status(500).json({ error: err })
+    }
 })
 module.exports = router
